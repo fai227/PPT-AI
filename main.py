@@ -6,9 +6,9 @@ import numpy as np
 from utility.controller import controller
 
 class Application_Status:
-    Wait = 0
-    CHARACTER_SELECT = 1
-    Game = 2
+    Wait = "Wait"
+    CHARACTER_SELECT = "Character Select"
+    Game = "In Game"
 
 # 定数
 IMAGE_WIDTH = 640
@@ -17,6 +17,7 @@ IMAGE_CHANNEL = 4
 ALL_PIXEL_DATA_LENGTH = IMAGE_WIDTH * IMAGE_HEIGHT * IMAGE_CHANNEL
 
 SIMILARITY_THRESHOLD = 0.7
+TEMPLATE_THRESHOLD = 0.9
 
 # グローバル変数
 ppt = window_capture("PuyoPuyoTetris2")
@@ -24,6 +25,7 @@ application_status = Application_Status.Wait
 previous_time = time.time()
 
 go_image = cv2.imread("./image/Go.png", cv2.IMREAD_UNCHANGED)
+ready_image = cv2.imread("./image/Ready.png", cv2.IMREAD_UNCHANGED)
 character_image = cv2.imread("./image/Character.png", cv2.IMREAD_UNCHANGED)
 
 # メインループ
@@ -53,11 +55,25 @@ def update():
 
         # ゲーム開始判定
         else:
+            ready_match_result = cv2.matchTemplate(screenshot_array, ready_image, cv2.TM_CCORR_NORMED)
+            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(ready_match_result)
+            if max_val > TEMPLATE_THRESHOLD:
+                """
+                top_left = max_loc
+                bottom_right = (top_left[0] + ready_image.shape[1], top_left[1] + ready_image.shape[0])
+                cv2.rectangle(screenshot_array, top_left, bottom_right, (255, 255, 0), 2)
+                cv2.imwrite("screenshot.png", screenshot_array)
+                """
+
+                application_status = Application_Status.Game
+            """
             go_match_result = cv2.matchTemplate(screenshot_array, go_image, cv2.TM_CCORR_NORMED)
             min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(go_match_result)
             if max_val > SIMILARITY_THRESHOLD:
                 print("ゲーム開始")
                 application_status = Application_Status.Game
+            """
+            
 
 
     elif application_status is Application_Status.CHARACTER_SELECT:
@@ -90,6 +106,7 @@ if __name__ == "__main__":
         current_time = time.time()
         delta_time = current_time - previous_time    
         if counter % 10 == 0:
-            print(str(round(1 / delta_time)) + "fps")
+            pass
+            # print(str(round(1 / delta_time)) + "fps")
         previous_time = current_time
         counter += 1
