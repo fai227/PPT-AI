@@ -4,29 +4,25 @@ from utility.window_capture import window_capture
 import cv2
 import numpy as np
 from utility.controller import controller
+from utility.board_detector import board_detector
+from utility import constants
 
 class Application_Status:
     Wait = "Wait"
     CHARACTER_SELECT = "Character Select"
     Game = "In Game"
 
-# 定数
-IMAGE_WIDTH = 640
-IMAGE_HEIGHT = 360
-IMAGE_CHANNEL = 4
-ALL_PIXEL_DATA_LENGTH = IMAGE_WIDTH * IMAGE_HEIGHT * IMAGE_CHANNEL
-
 SIMILARITY_THRESHOLD = 0.7
-TEMPLATE_THRESHOLD = 0.9
+TEMPLATE_THRESHOLD = 0.85
 
 # グローバル変数
 ppt = window_capture("PuyoPuyoTetris2")
 application_status = Application_Status.Wait
 previous_time = time.time()
 
-go_image = cv2.imread("./image/Go.png", cv2.IMREAD_UNCHANGED)
-ready_image = cv2.imread("./image/Ready.png", cv2.IMREAD_UNCHANGED)
-character_image = cv2.imread("./image/Character.png", cv2.IMREAD_UNCHANGED)
+go_image = cv2.imread("./image/Go.png")
+ready_image = cv2.imread("./image/Ready.png")
+character_image = cv2.imread("./image/Character.png")
 
 # メインループ
 def update():
@@ -34,7 +30,7 @@ def update():
 
     # スクリーンショットを取って変形
     screenshot_array = ppt.get_screenshot()
-    screenshot_array = cv2.resize(src=screenshot_array, dsize=(IMAGE_WIDTH, IMAGE_HEIGHT))
+    screenshot_array = cv2.resize(src=screenshot_array, dsize=(constants.IMAGE_WIDTH, constants.IMAGE_HEIGHT))
 
 
     if application_status is Application_Status.Wait:
@@ -46,7 +42,7 @@ def update():
         # print(np.count_nonzero(character_image == screenshot_array) / (IMAGE_WIDTH * IMAGE_HEIGHT * 4))
         
         # キャラ選択画面判定
-        character_select_similarity = get_similarity(screenshot_array, character_image)
+        character_select_similarity = board_detector.get_similarity(screenshot_array, character_image,constants. ALL_PIXEL_DATA_LENGTH)
         if character_select_similarity > SIMILARITY_THRESHOLD:
             print("キャラ選択")
             controller.chose_character()
@@ -64,7 +60,7 @@ def update():
                 cv2.rectangle(screenshot_array, top_left, bottom_right, (255, 255, 0), 2)
                 cv2.imwrite("screenshot.png", screenshot_array)
                 """
-
+                print("ゲーム開始")
                 application_status = Application_Status.Game
             """
             go_match_result = cv2.matchTemplate(screenshot_array, go_image, cv2.TM_CCORR_NORMED)
@@ -77,7 +73,7 @@ def update():
 
 
     elif application_status is Application_Status.CHARACTER_SELECT:
-        character_select_similarity = get_similarity(screenshot_array, character_image)
+        character_select_similarity = board_detector.get_similarity(screenshot_array, character_image, constants.ALL_PIXEL_DATA_LENGTH)
         if character_select_similarity < SIMILARITY_THRESHOLD:
             print("キャラ選び終了")
             application_status = Application_Status.Wait
@@ -87,14 +83,13 @@ def update():
         game_update(screenshot_array=screenshot_array)
     
 def game_update(screenshot_array):
-    pass
-
-def get_similarity(a, b):
-    return np.count_nonzero(np.isclose(a=a, b=b, atol=20)) / ALL_PIXEL_DATA_LENGTH
+    if board_detector.check_next_turn(screenshot_array=screenshot_array):
+        print("次のターン")
 
 
 # メイン実行部分
 if __name__ == "__main__":
+
     # コントローラー接続
     controller.connect()
 

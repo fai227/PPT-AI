@@ -1,5 +1,6 @@
 import numpy as np
 import win32gui, win32ui, win32con
+
 class window_capture:
 
     # properties
@@ -52,6 +53,7 @@ class window_capture:
         signedIntsArray = dataBitMap.GetBitmapBits(True)
         img = np.fromstring(signedIntsArray, dtype='uint8')
         img.shape = (self.h, self.w, 4)
+        img = img[:,:,:3]
 
         # free resources
         dcObj.DeleteDC()

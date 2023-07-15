@@ -19,7 +19,7 @@ class controller:
             controller.control_queue.put(arg)
 
     def chose_character():
-        controller.move("l","l","l","l","l","d", "h", 0.2, "h", 0.4, "h")
+        controller.move(0.2, "l","l","l","l","l","d", "h", 0.2, "h", 0.4, "h")
 
     def disconnect():
         global process
